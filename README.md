@@ -30,7 +30,7 @@ window.onload = () => {
 
 Now that you have Iridium up and running, let's get familiar with the packages and the macros / functions they contain.
 
-### `iridium`
+## `iridium`
 
 This package contains *ALL* macros and functions that are part of Iridium:
 ```
@@ -45,7 +45,7 @@ useall iridium:collision
 useall iridium:ecs
 ```
 
-### `iridium:core`
+## `iridium:core`
 
 This package contains functions and macros related to the game loop.
 
@@ -53,7 +53,7 @@ This package contains functions and macros related to the game loop.
 
 **`delta_time`** - Returns the time passed since the last frame in seconds.
 
-### `iridium:math`
+## `iridium:math`
 
 This package contains functions and macros related to vector math. A "vector" shall be a list of numbers, meaning a "2D vector" would be `(x y)`, a "3D vector" would be `(x y z)`, and so on. None of the functions in this package modify the vectors they are given.
 
@@ -91,7 +91,7 @@ This package contains functions and macros related to vector math. A "vector" sh
 
 **`[.] <x> <components>`** - Returns a new vector, created by the specified components of the given vector in the specified order. `<components>` shall be a single identifier. Example: calling `[.] (1 2 3) xzy` would result in `(1 3 2)`, or `[.] (4 5 6) zzx` in `(6 6 4)`. [More info about swizzling here](https://en.wikipedia.org/wiki/Swizzling_(computer_graphics)).
 
-### `iridium:graphics`
+## `iridium:graphics`
 
 This package contains functions and macros related to 2D graphics.
 
@@ -165,7 +165,7 @@ This package contains functions and macros related to 2D graphics.
 
 **`draw_shape js <lines> <color>`** - Draws a shape that has the given lines as its outline with the given color. `<lines>` shall be a list of at least three elements, each of which shall be a list consisting of 1 2-dimensional vector (straight line), 2 2-dimensional vectors (quadratic bezier) or 3 2-dimensional vectors (cubic bezier). The first element must be a list consisting of a single 2-dimensional vector. `<color>` shall be a `Color`.
 
-### `iridium:resources`
+## `iridium:resources`
 
 This package contains functions and macros related to loading resources from files.
 
@@ -179,7 +179,7 @@ This package contains functions and macros related to loading resources from fil
 
 **`getr <res> <path>`** - Returns the object loaded from a given path from inside of a given resource bundle. `<res>` shall be an object returned from a call to `load`, and shall have finished loading. `<path>` shall be the exact same path passed to `Image` or `Audio`.
 
-### `iridium:input`
+## `iridium:input`
 
 This package contains functions and macros related to keyboard, mouse and touch input.
 
@@ -192,7 +192,7 @@ This package contains functions and macros related to keyboard, mouse and touch 
 
 **`is_pressed <key>`** - Returns a boolean representing if the given key is pressed. `<key>` shall be one of `Key:XXX`.
 
-**`Button:Left` `Button:Scroll` `Button:Right`** - ...
+**`Button:Left` `Button:Scroll` `Button:Right`** - Represent mouse buttons.
 
 **`is_clicked <button>`** - Returns a boolean representing if the given button is clicked. If touch input is received, `Button:Left` will be registered as clicked. `<button>` shall be one of `Button:XXX`.
 
@@ -200,7 +200,7 @@ This package contains functions and macros related to keyboard, mouse and touch 
 
 **`touch_positions`** - Returns a list of 2-dimensional vectors representing the positions of all received touches.
 
-### `iridium:audio`
+## `iridium:audio`
 
 This package contains functions and macros related to 3D audio.
 
@@ -224,7 +224,7 @@ This package contains functions and macros related to 3D audio.
 
 **`is_playing <source>`** - Returns a boolean representing if the given audio source is currently playing back audio.`<source>` shall be an `AudioSource`.
 
-### `iridium:collision`
+## `iridium:collision`
 
 This package contains functions and macros related to 2D collision.
 
@@ -234,7 +234,7 @@ This package contains functions and macros related to 2D collision.
 
 **`colliding_with <a> <b>`** - Returns a boolean representing if the two given colliders overlap. `<a>` and `<b>` shall be objects returned from calls to `BoxCollider` and `CircleCollider`.
 
-### `iridium:ecs`
+## `iridium:ecs`
 
 This package contains functions and macros related to Iridium's entity component system (ECS).
 
