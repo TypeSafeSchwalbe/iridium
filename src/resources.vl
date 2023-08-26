@@ -1,0 +1,88 @@
+
+pkg iridium:resources:impl
+
+use data (list:size list:at list:slice list:push map:get)
+
+
+func Image(path) (
+    var image object
+    setm image "type" "image"
+    setm image "path" path
+    setm image "data" null
+    return image
+)
+
+func Audio(path) (
+    var audio object
+    setm audio "type" "audio"
+    setm audio "path" path
+    setm audio "data" null
+    return audio
+)
+
+vfunc load js "(resources) => {
+    const r = {
+        items: new Map(),
+        done: false,
+        doneHandlers: []
+    };
+    for(const item of resources) {
+        r.items.set(item.path, { item, loaded: false });
+    }
+    for(const item of r.items.values()) {
+        const onItemDone = () => {
+            item.loaded = true;
+            for(const item of r.items.values()) {
+                if(item.loaded) { continue; }
+                return;
+            }
+            r.done = true;
+            for(const handler of r.doneHandlers) {
+                handler();
+            }
+        };
+        switch(item.item.type) {
+            case 'image': {
+                const img = new Image();
+                item.item.data = img;
+                item.item.size = [ 0, 0 ];
+                img.onload = () => {
+                    item.item.size[0] = img.width;
+                    item.item.size[1] = img.height;
+                    onItemDone();
+                };
+                img.src = item.item.path;
+            } break;
+            case 'audio': {
+                fetch(item.item.path)
+                    .then((response) => response.arrayBuffer())
+                    .then((responseBuffer) => iridium.audioContext.decodeAudioData(responseBuffer))
+                    .then((audioBuffer) => {
+                        item.item.data = audioBuffer;
+                        onItemDone();
+                    });
+            } break;
+        }
+    }
+    return r;
+}"
+
+macro when_loaded(res body) (
+    var r eval res
+    assert is_object r
+    assert is_object getm r "items"
+    assert is_object getm r "doneHandlers"
+    assert {list:size body >= 2}
+    assert {getm getm body 0 "content" == "("}
+    assert {getm list:at body ~ 1 "content" == ")"}
+    set body list:slice body 1 ~ 1
+    var handler lambda() eval body
+    if getm r "done" call handler ()
+    else list:push getm r "doneHandlers" handler
+)
+
+func getr(res path) (
+    var item map:get getm res "items" path
+    assert getm item "loaded"
+    return getm item "item"
+)

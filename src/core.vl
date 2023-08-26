@@ -1,0 +1,16 @@
+
+pkg iridium:core:impl
+
+use data (list:size list:at list:slice)
+
+var start_gameloop js "iridium.startGameloop"
+
+macro gameloop(body) (
+    assert {list:size body >= 2}
+    assert {getm getm body 0 "content" == "("}
+    assert {getm list:at body ~ 1 "content" == ")"}
+    set body list:slice body 1 ~ 1
+    call start_gameloop (lambda() eval body)
+)
+
+vfunc delta_time js "() => iridium.deltaTime"

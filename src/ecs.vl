@@ -1,0 +1,142 @@
+
+pkg iridium:ecs:impl
+
+use data (list:size list:at list:slice list:map map:new map:set map:has map:get list:concat list:splice)
+
+
+var registerSystem js "(s) => iridium.systems.push(s)"
+
+macro system(body) (
+    assert {list:size body >= 2}
+    assert {getm getm body 0 "content" == "("}
+    assert {getm list:at body ~ 1 "content" == ")"}
+    set body list:slice body 1 ~ 1
+    call registerSystem (lambda() eval body)
+)
+
+
+var components map:new
+
+macro component(name value) (
+    assert {list:size name == 1}
+    map:set components getm list:at name 0 "content" lambda() eval value
+)
+
+
+var createEntityGenerator js "iridium.createEntityGenerator"
+
+macro entity(name component_names) (
+    assert {list:size name == 1}
+    assert {list:size component_names >= 2}
+    assert {getm list:at component_names 0 "content" == "("}
+    assert {getm list:at component_names ~ 1 "content" == ")"}
+    set component_names list:slice component_names 1 ~ 1
+    var g list:slice call createEntityGenerator (
+        getm list:at name 0 "content"
+        list:map component_names lambda(c _ _) getm c "content"
+        list:map component_names lambda(c _ _) (
+            var cn getm c "content"
+            if ! map:has components cn error format "There is no component with the name '{0}'!" (cn)
+            return map:get components cn
+        )
+    ) 1 ~ 1
+    setm list:at name 0 "content" "+"
+    eval list:concat list:concat name list:splice g ~ 2 2 g
+)
+
+
+vfunc entities js "() => iridium.entities.values()"
+
+
+var get_entities_called js "(name) => {
+    let entities = iridium.entities.values();
+    let iterationCount = 0;
+    return {
+        next() {
+            while(true) {
+                let entity = entities.next();
+                if(entity.done) { return { value: iterationCount, done: true }; }
+                if(entity.value.IRIDIUM_ENTITY_NAME === name) {
+                    iterationCount += 1;
+                    return { value: entity.value, done: false };
+                }
+            }
+        },
+        [Symbol.iterator]() {
+            return this;
+        }
+    };
+}"
+
+macro entities_called(name) (
+    assert {list:size name == 1}
+    return call get_entities_called (getm list:at name 0 "content")
+)
+
+
+var get_entities_with js "(componentNames) => {
+    let entities = iridium.entities.values();
+    let iterationCount = 0;
+    return {
+        next() {
+            while(true) {
+                let entity = entities.next();
+                if(entity.done) { return { value: iterationCount, done: true }; }
+                let hasAll = true;
+                for(const componentName of componentNames) {
+                    if(componentName in entity.value) { continue; }
+                    hasAll = false;
+                    break;
+                }
+                if(hasAll) {
+                    iterationCount += 1;
+                    return { value: entity.value, done: false };
+                }
+            }
+        },
+        [Symbol.iterator]() {
+            return this;
+        }
+    };
+}"
+
+macro entities_with(component_names) (
+    if {{list:size component_names >= 2} && {{getm getm component_names 0 "content" == "("} && {getm list:at component_names ~ 1 "content" == ")"}}} set component_names list:slice component_names 1 ~ 1
+    return call get_entities_with (list:map component_names lambda(c _ _) (
+        var cn getm c "content"
+        if ! map:has components cn error format "There is no component with the name '{0}'!" (cn)
+        return cn
+    ))
+)
+
+
+vfunc delete_entity js "(entity) => {
+    iridium.entities.delete(entity);
+    iridium.deadEntities.push(entity);
+}"
+
+
+var object_has js "(obj, m) => m in obj"
+
+macro setc(e componentName value) (
+    assert {list:size componentName == 1}
+    var cn getm getm componentName 0 "content"
+    set e eval e
+    if ! call object_has (e cn) error format "The entity has no component with the name '{0}'!" (cn)
+    setm e cn eval value
+)
+
+macro hasc(e componentName) (
+    assert {list:size componentName == 1}
+    var cn getm getm componentName 0 "content"
+    set e eval e
+    return call object_has (e cn)
+)
+
+macro getc(e componentName) (
+    assert {list:size componentName == 1}
+    var cn getm getm componentName 0 "content"
+    set e eval e
+    if ! call object_has (e cn) error format "The entity has no component with the name '{0}'!" (cn)
+    return getm e cn
+)

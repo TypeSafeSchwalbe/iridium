@@ -1,0 +1,218 @@
+
+pkg iridium:graphics:impl
+
+use data (list:size list:at list:slice)
+
+record Color(r g b)
+
+macro enabled() true
+macro disabled() false
+
+
+vfunc Surface js "(size) => {
+    const surface = {
+        canvas: null,
+        g: null,
+        size
+    };
+    surface.canvas = document.createElement('canvas');
+    surface.canvas.width = size[0];
+    surface.canvas.height = size[1];
+    surface.g = surface.canvas.getContext('2d');
+    return surface;
+}"
+
+vfunc canvas js "() => iridium.canvasSurface"
+
+vfunc render_text js "(height, content, fontFamily, color) => {
+    const surface = {
+        canvas: null,
+        g: null,
+        size: [0, height]
+    };
+    surface.canvas = document.createElement('canvas');
+    surface.canvas.height = height;
+    surface.g = surface.canvas.getContext('2d');
+    surface.g.font = `${height}px ${fontFamily}`;
+    const width = Math.ceil(surface.g.measureText(content).width);
+    surface.canvas.width = width;
+    surface.size[0] = width;
+    surface.g.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    surface.g.font = `${height}px ${fontFamily}`;
+    surface.g.fillText(content, 0, height);
+    return surface;
+}"
+
+func size_of(surface) getm surface "size"
+
+vfunc target js "(surface) => {
+    iridium.target = surface;
+}"
+vfunc current_target js "() => iridium.target"
+macro with_target(t expr) (
+    if {{list:size expr >= 2} && {{getm getm expr 0 "content" == "("} && {getm list:at expr ~ 1 "content" == ")"}}} set expr list:slice expr 1 ~ 1
+    var t_val current_target
+    target eval t
+    eval expr
+    target t_val
+)
+
+
+vfunc custom js "(v1, v2) => (g) => g.transform(v1[0], v1[1], v1[2], v2[0], v2[1], v2[2])"
+vfunc translate js "(v) => (g) => g.translate(v[0], v[1])"
+vfunc rotate js "(angle) => (g) => g.rotate(angle)"
+vfunc scale js "(v) => (g) => g.scale(v[0], v[1])"
+
+vfunc transformation js "(transformations) => {
+    iridium.target.g.resetTransform();
+    for(const transform of transformations) {
+        transform(iridium.target.g);
+    }
+    iridium.transform = iridium.target.g.getTransform();
+}"
+vfunc current_transformation js "() => iridium.transform"
+var set_transformation js "(t) => {
+    iridium.transform = t;
+}"
+macro with_transformation(t expr) (
+    if {{list:size expr >= 2} && {{getm getm expr 0 "content" == "("} && {getm list:at expr ~ 1 "content" == ")"}}} set expr list:slice expr 1 ~ 1
+    var original_t current_transformation
+    transformation eval t
+    eval expr
+    call set_transformation (original_t)
+)
+
+
+vfunc image_smoothing js "(enabled) => {
+    iridium.imageSmoothing = enabled;
+}"
+vfunc current_image_smoothing js "() => iridium.imageSmoothing"
+macro with_image_smoothing(imgs expr) (
+    if {{list:size expr >= 2} && {{getm getm expr 0 "content" == "("} && {getm list:at expr ~ 1 "content" == ")"}}} set expr list:slice expr 1 ~ 1
+    var image_smoothing_enabled current_image_smoothing
+    image_smoothing eval imgs
+    eval expr
+    image_smoothing image_smoothing_enabled
+)
+
+
+vfunc composition js "(operation) => {
+    iridium.globalCompositeOperation = operation;
+}"
+vfunc current_composition js "() => iridium.globalCompositeOperation"
+macro with_composition(op expr) (
+    if {{list:size expr >= 2} && {{getm getm expr 0 "content" == "("} && {getm list:at expr ~ 1 "content" == ")"}}} set expr list:slice expr 1 ~ 1
+    var comp_op current_composition
+    composition eval op
+    eval expr
+    composition comp_op
+)
+
+
+vfunc alpha js "(alpha) => {
+    iridium.globalAlpha = alpha;
+}"
+vfunc current_alpha js "() => iridium.globalAlpha"
+macro with_alpha(a expr) (
+    if {{list:size expr >= 2} && {{getm getm expr 0 "content" == "("} && {getm list:at expr ~ 1 "content" == ")"}}} set expr list:slice expr 1 ~ 1
+    var alpha_value current_alpha
+    alpha eval a
+    eval expr
+    alpha alpha_value
+)
+
+
+vfunc draw_rect js "(dPos, dSize, color) => {
+    iridium.target.g.setTransform(iridium.transform);
+    iridium.target.g.globalCompositeOperation = iridium.globalCompositeOperation;
+    iridium.target.g.globalAlpha = iridium.globalAlpha / 255;
+    iridium.target.g.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    iridium.target.g.fillRect(dPos[0], dPos[1], dSize[0], dSize[1]);
+}"
+
+vfunc draw_oval js "(dPos, dSize, color) => {
+    iridium.target.g.setTransform(iridium.transform);
+    iridium.target.g.globalCompositeOperation = iridium.globalCompositeOperation;
+    iridium.target.g.globalAlpha = iridium.globalAlpha / 255;
+    iridium.target.g.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    iridium.target.g.beginPath();
+    iridium.target.g.ellipse(dPos[0] + dSize[0] / 2, dPos[1] + dSize[1] / 2, dSize[0] / 2, dSize[1] / 2, 0, 2 * Math.PI, false);
+    iridium.target.g.fill();
+}"
+
+vfunc draw_subsurface js "(dPos, dSize, surface, srcPos, srcSize) => {
+    iridium.target.g.setTransform(iridium.transform);
+    iridium.target.g.globalCompositeOperation = iridium.globalCompositeOperation;
+    iridium.target.g.globalAlpha = iridium.globalAlpha / 255;
+    iridium.target.g.imageSmoothingEnabled = iridium.imageSmoothing;
+    iridium.target.g.drawImage(surface.canvas, srcPos[0], srcPos[1], srcSize[0], srcSize[1], dPos[0], dPos[1], dSize[0], dSize[1]);
+}"
+func draw_surface(d_pos d_size surface) draw_subsurface d_pos d_size surface (0 0) size_of surface
+
+vfunc draw_subimage js "(dPos, dSize, image, srcPos, srcSize) => {
+    iridium.target.g.setTransform(iridium.transform);
+    iridium.target.g.globalCompositeOperation = iridium.globalCompositeOperation;
+    iridium.target.g.globalAlpha = iridium.globalAlpha / 255;
+    iridium.target.g.imageSmoothingEnabled = iridium.imageSmoothing;
+    iridium.target.g.drawImage(image.data, srcPos[0], srcPos[1], srcSize[0], srcSize[1], dPos[0], dPos[1], dSize[0], dSize[1]);    
+}"
+func draw_image(d_pos d_size image) draw_subimage d_pos d_size image (0 0) size_of image
+
+vfunc draw_line js "(startPos, endPos, width, color) => {
+    iridium.target.g.setTransform(iridium.transform);
+    iridium.target.g.globalCompositeOperation = iridium.globalCompositeOperation;
+    iridium.target.g.globalAlpha = iridium.globalAlpha / 255;
+    iridium.target.g.strokeStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    iridium.target.g.lineWidth = width;
+    iridium.target.g.beginPath();
+    iridium.target.g.moveTo(startPos[0], startPos[1]);
+    iridium.target.g.lineTo(endPos[0], endPos[1]);
+    iridium.target.g.stroke();  
+}"
+
+vfunc draw_quadratic_bezier js "(startPos, c1Pos, endPos, width, color) => {
+    iridium.target.g.setTransform(iridium.transform);
+    iridium.target.g.globalCompositeOperation = iridium.globalCompositeOperation;
+    iridium.target.g.globalAlpha = iridium.globalAlpha / 255;
+    iridium.target.g.strokeStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    iridium.target.g.lineWidth = width;
+    iridium.target.g.beginPath();
+    iridium.target.g.moveTo(startPos[0], startPos[1]);
+    iridium.target.g.quadraticCurveTo(c1Pos[0], c1Pos[1], endPos[0], endPos[1]);
+    iridium.target.g.stroke();  
+}"
+
+vfunc draw_cubic_bezier js "(startPos, c1Pos, c2Pos, endPos, width, color) => {
+    iridium.target.g.setTransform(iridium.transform);
+    iridium.target.g.globalCompositeOperation = iridium.globalCompositeOperation;
+    iridium.target.g.globalAlpha = iridium.globalAlpha / 255;
+    iridium.target.g.strokeStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    iridium.target.g.lineWidth = width;
+    iridium.target.g.beginPath();
+    iridium.target.g.moveTo(startPos[0], startPos[1]);
+    iridium.target.g.bezierCurveTo(c1Pos[0], c1Pos[1], c2Pos[0], c2Pos[1], endPos[0], endPos[1]);
+    iridium.target.g.stroke();  
+}"
+
+vfunc draw_shape js "(lines, color) => {
+    if(!(lines instanceof Array) || lines.length < 3) { throw `parameter 'lines' for 'draw_shape' requires a list of length 3 or bigger`; }
+    iridium.target.g.setTransform(iridium.transform);
+    iridium.target.g.globalCompositeOperation = iridium.globalCompositeOperation;
+    iridium.target.g.globalAlpha = iridium.globalAlpha / 255;
+    iridium.target.g.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    iridium.target.g.lineWidth = 1;
+    iridium.target.g.beginPath();
+    if(!(lines[0] instanceof Array) 
+    || lines[0].length !== 1) { throw `first element of the 'lines'-list needs to be a list containing a single point`; }
+    iridium.target.g.moveTo(lines[0][0][0], lines[0][0][1]);
+    for(let lineIdx = 1; lineIdx < lines.length; lineIdx += 1) {
+        if(!(lines[lineIdx] instanceof Array)
+        || lines[lineIdx].length === 0 || lines[lineIdx].length > 3) { throw `each element of the 'lines'-list needs to be a list containing 1-3 points`; }
+        switch(lines[lineIdx].length) {
+            case 1: iridium.target.g.lineTo(lines[lineIdx][0][0], lines[lineIdx][0][1]); break;
+            case 2: iridium.target.g.quadraticCurveTo(lines[lineIdx][0][0], lines[lineIdx][0][1], lines[lineIdx][1][0], lines[lineIdx][1][1]); break;
+            case 3: iridium.target.g.bezierCurveTo(lines[lineIdx][0][0], lines[lineIdx][0][1], lines[lineIdx][1][0], lines[lineIdx][1][1], lines[lineIdx][2][0], lines[lineIdx][2][1]); break;
+        }
+    }
+    iridium.target.g.fill();
+}"

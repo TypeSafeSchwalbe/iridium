@@ -1,0 +1,58 @@
+
+pkg iridium:collision:impl
+
+use iridium:math:impl [dim]
+
+func BoxCollider(pos size) (
+    assert {[dim] pos == 2}
+    assert {[dim] size == 2}
+    var c object
+    setm c "type" "box"
+    setm c "pos" pos
+    setm c "size" size
+    return c
+)
+
+func CircleCollider(pos radius) (
+    assert {[dim] pos == 2}
+    var c object
+    setm c "type" "sphere"
+    setm c "pos" pos
+    setm c "radius" radius
+    return c
+)
+
+var colliding_box_box js "(a, b) => {
+    return a.pos[0] < b.pos[0]  + b.size[0]
+        && a.pos[0] + a.size[0] > b.pos[0]
+        && a.pos[1] < b.pos[1]  + b.size[1]
+        && a.pos[1] + a.size[1] > b.pos[1];
+}"
+var colliding_box_circle js "(a, b) => {
+    const px = Math.min(Math.max(b.pos[0], a.pos[0]), a.pos[0] + a.size[0]);
+    const py = Math.min(Math.max(b.pos[1], a.pos[1]), a.pos[1] + a.size[1]);
+    if(b.radius === 0
+    && px == b.pos[0]
+    && py == b.pos[1]) { return true; }
+    return Math.sqrt(Math.pow(px - b.pos[0], 2) + Math.pow(py - b.pos[1], 2)) <= b.radius;
+}"
+var colliding_circle_circle js "(a, b) => {
+    return Math.sqrt(Math.pow(b.pos[0] - a.pos[0]) + Math.pow(b.pos[1] - a.pos[1])) <= a.radius + b.radius;
+}"
+func colliding_with(a b) (
+    var self a
+    var other b
+    if {getm a "type" == "box"} (
+        if {getm b "type" == "box"} (
+            return call colliding_box_box (a b)
+        ) else (
+            return call colliding_box_circle (a b)
+        )
+    ) else (
+        if {getm b "type" == "box"} (
+            return call colliding_box_circle (b a)
+        ) else (
+            return call colliding_circle_circle (a b)
+        )
+    )
+)

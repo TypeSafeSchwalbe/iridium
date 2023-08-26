@@ -1,0 +1,101 @@
+
+pkg iridium:core
+use iridium:core:impl (
+    gameloop
+    delta_time
+)
+
+pkg iridium:math
+use iridium:math:impl (
+    [dim]
+    [+] [-] [*] [/] [%] [~]
+    [len]
+    [unit]
+    [dot]
+    [cross]
+    [rotated]
+    [.x] [.y] [.z] [.w] [.]
+)
+
+pkg iridium:graphics
+use iridium:graphics:impl (
+    Color
+    enabled disabled
+    Surface
+    canvas
+    render_text
+    size_of
+    target current_target with_target
+    custom translate rotate scale
+    transformation current_transformation with_transformation
+    image_smoothing current_image_smoothing with_image_smoothing
+    composition current_composition with_composition
+    alpha current_alpha with_alpha
+    draw_rect
+    draw_oval
+    draw_surface draw_subsurface
+    draw_image draw_subimage
+    draw_line draw_quadratic_bezier draw_cubic_bezier
+    draw_shape
+)
+
+pkg iridium:resources
+use iridium:resources:impl (
+    Image Audio
+    load when_loaded getr
+)
+
+pkg iridium:input
+use iridium:input:impl (
+    Key:CtrlL Key:CtrlR Key:ShiftL Key:ShiftR Key:Space Key:Backspace Key:Enter Key:AltL Key:AltR
+    Key:A Key:B Key:C Key:D Key:E Key:F Key:G Key:H Key:I Key:J Key:K Key:L Key:M Key:N Key:O Key:P Key:Q Key:R Key:S Key:T Key:U Key:V Key:W Key:X Key:Y Key:Z
+    Key:ArrUp Key:ArrDown Key:ArrLeft Key:ArrRight
+    Key:0 Key:1 Key:2 Key:3 Key:4 Key:5 Key:6 Key:7 Key:8 Key:9
+    Key:F1 Key:F2 Key:F3 Key:F4 Key:F5 Key:F6 Key:F7 Key:F8 Key:F9 Key:F10 Key:F11 Key:F12
+    Key:Esc
+    is_pressed
+    Button:Left Button:Scroll Button:Right
+    is_clicked
+    cursor_position
+    touch_positions
+)
+
+pkg iridium:audio
+use iridium:audio:impl (
+    set_listener_position
+    set_listener_orientation
+    set_listener_volume
+    AudioSource
+    set_source_position
+    set_source_volume
+    set_source_pitch
+    set_source_repeating
+    play
+    is_playing
+)
+
+pkg iridium:collision
+use iridium:collision:impl (
+    BoxCollider CircleCollider
+    colliding_with
+)
+
+pkg iridium:ecs
+use iridium:ecs:impl (
+    system
+    component
+    entity
+    entities entities_called entities_with
+    delete_entity
+    setc hasc getc
+)
+
+pkg iridium
+useall iridium:core
+useall iridium:math
+useall iridium:graphics
+useall iridium:resources
+useall iridium:input
+useall iridium:audio
+useall iridium:collision
+useall iridium:ecs

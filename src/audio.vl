@@ -1,0 +1,90 @@
+
+pkg iridium:audio:impl
+
+vfunc set_listener_position js "(position) => {
+    const listener = iridium.audioContext.listener;
+    if(`positionX` in listener && `positionY` in listener && `positionZ` in listener) {
+        listener.positionX.value = position[0];
+        listener.positionY.value = position[1];
+        listener.positionZ.value = position[2];
+    } else {
+        listener.setPosition(position[0], position[1], position[2]);
+    }
+}"
+
+vfunc set_listener_orientation js "(at, up) => {
+    const listener = iridium.audioContext.listener;
+    if(`forwardX` in listener && `forwardY` in listener && `forwardZ` in listener && `upX` in listener && `upY` in listener && `upZ` in listener) {
+        listener.forwardX.value = at[0];
+        listener.forwardY.value = at[1];
+        listener.forwardZ.value = at[2];
+        listener.upX.value = up[0];
+        listener.upY.value = up[1];
+        listener.upZ.value = up[2];
+    } else {
+        listener.setOrientation(at[0], at[1], at[2], up[0], up[1], up[2]);
+    }
+}"
+
+vfunc set_listener_volume js "(volume) => {
+    iridium.globalGainNode.gain.value = volume;
+}"
+
+
+var create_source js "() => {
+    const source = {
+        pitch: 1,
+        repeating: false,
+        playing: false,
+
+        sourceNode: null,
+        gainNode: iridium.audioContext.createGain(),
+        pannerNode: iridium.audioContext.createPanner()
+    };
+    source.pannerNode.panningModel = `HRTF`;
+    source.pannerNode.distanceModel = `inverse`;
+    source.gainNode.connect(source.pannerNode);
+    source.pannerNode.connect(iridium.globalGainNode);
+    return source;
+}"
+
+func AudioSource(position) (
+    var source call create_source ()
+    set_source_position source position
+    return source
+)
+
+vfunc set_source_position js "(source, position) => {
+    source.pannerNode.positionX.value = position[0];
+    source.pannerNode.positionY.value = position[1];
+    source.pannerNode.positionZ.value = position[2];
+}"
+
+vfunc set_source_volume js "(source, volume) => {
+    source.gainNode.gain.value = volume;
+}"
+
+vfunc set_source_pitch js "(source, pitch) => {
+    source.pitch = pitch;
+    if(!source.playing) { return; }
+    source.sourceNode.playbackRate.value = pitch;
+}"
+
+vfunc set_source_repeating js "(source, repeat) => {
+    source.repeating = repeat;
+    if(!source.playing) { return; }
+    source.sourceNode.loop = repeat;
+}"
+
+vfunc play js "(source, audio) => {
+    source.sourceNode = iridium.audioContext.createBufferSource();
+    source.sourceNode.buffer = audio.data;
+    source.sourceNode.playbackRate.value = source.pitch;
+    source.sourceNode.loop = source.repeating;
+    source.sourceNode.onended = () => { source.playing = source.repeating; };
+    source.sourceNode.connect(source.gainNode);
+    source.sourceNode.start();
+    source.playing = true;
+}"
+
+func is_playing(source) getm source "playing"
