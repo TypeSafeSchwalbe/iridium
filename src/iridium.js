@@ -128,7 +128,7 @@ iridium.startGameloop = (frame) => {
 
 iridium.createEntityGenerator = (name, componentNames, componentValues) => {
     iridium.entityGenerators.set(name, () => {
-        const e = null;
+        let e = null;
         for(let deadEntityIndex = 0; deadEntityIndex < iridium.deadEntities.length; deadEntityIndex += 1) {
             const de = iridium.deadEntities[deadEntityIndex];
             if(de.IRIDIUM_ENTITY_NAME === name) {
